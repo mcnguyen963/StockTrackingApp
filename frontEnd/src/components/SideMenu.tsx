@@ -5,10 +5,16 @@ import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import { Draw } from "@mui/icons-material";
-import { Select } from "@mui/material";
+import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
+import { Draw, Logout } from "@mui/icons-material";
+import { Button, Select } from "@mui/material";
 import SelectContent from "./SelectContent";
 import MenuContent from "./MenuContent";
+import type { UserData } from "../type";
+interface SideMenuProps {
+  userData: UserData;
+}
+
 const drawerWidth = 240;
 
 const Drawer = styled(MuiDrawer)({
@@ -19,10 +25,12 @@ const Drawer = styled(MuiDrawer)({
   [`& .${drawerClasses.paper}`]: {
     width: drawerWidth,
     boxSizing: "border-box",
+    backgroundColor: "#ffffffff",
+    color: "#070707ff",
   },
 });
 
-export default function SideMenu() {
+export default function SideMenu({ userData }: SideMenuProps) {
   return (
     <Drawer
       variant="permanent"
@@ -59,26 +67,41 @@ export default function SideMenu() {
           alignItems: "center",
           borderTop: "1px solid",
           borderColor: "divider",
+          width: "100%",
+          height: 80,
+          padding: 0,
         }}
       >
         <Avatar
           sizes="small"
-          alt="Riley Carter"
+          alt={userData.displayName}
           src="/static/images/avatar/7.jpg"
           sx={{ width: 36, height: 36 }}
         />
-        <Box sx={{ mr: "auto" }}>
+        <Box
+          sx={{
+            mr: "auto",
+            overflow: "hidden",
+          }}
+        >
           <Typography
             variant="body2"
             sx={{ fontWeight: 500, lineHeight: "16px" }}
           >
-            Riley Carter
+            {userData.displayName}
           </Typography>
-          <Typography variant="caption" sx={{ color: "text.secondary" }}>
-            riley@email.com
+          <Typography
+            variant="caption"
+            sx={{
+              color: "text.secondary",
+            }}
+          >
+            {userData.email}
           </Typography>
         </Box>
-        <>OptionsMenu</>
+        <Box sx={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
+          <LogoutRoundedIcon sx={{ mr: 0.5 }} />
+        </Box>
       </Stack>
     </Drawer>
   );
