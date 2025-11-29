@@ -11,37 +11,64 @@ import AssignmentRoundedIcon from "@mui/icons-material/AssignmentRounded";
 import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 import InfoRoundedIcon from "@mui/icons-material/InfoRounded";
 import HelpRoundedIcon from "@mui/icons-material/HelpRounded";
+import { Calculate } from "@mui/icons-material";
+import type { Page } from "../type";
 
-const mainListItems = [
-  { text: "Home", icon: <HomeRoundedIcon /> },
-  { text: "Analytics", icon: <AnalyticsRoundedIcon /> },
-  { text: "Clients", icon: <PeopleRoundedIcon /> },
-  { text: "Tasks", icon: <AssignmentRoundedIcon /> },
+const mainListItems: { text: string; icon: React.ReactNode; page: Page }[] = [
+  { text: "Home", icon: <HomeRoundedIcon />, page: "Home" },
+  {
+    text: "Compound Interest Calculator",
+    icon: <Calculate />,
+    page: "Compound Interest Calculator",
+  },
+  {
+    text: "S&P 500 Simulator",
+    icon: <AnalyticsRoundedIcon />,
+    page: "S&P 500 Simulator",
+  },
 ];
 
-const secondaryListItems = [
-  { text: "Settings", icon: <SettingsRoundedIcon /> },
-  { text: "About", icon: <InfoRoundedIcon /> },
-  { text: "Feedback", icon: <HelpRoundedIcon /> },
+const secondaryListItems: {
+  text: string;
+  icon: React.ReactNode;
+  page: Page;
+}[] = [
+  { text: "Settings", icon: <SettingsRoundedIcon />, page: "Settings" },
+  { text: "About", icon: <InfoRoundedIcon />, page: "About" },
 ];
+interface MenuContentProps {
+  currentPage: Page;
 
-export default function MenuContent() {
+  setCurrentPage: React.Dispatch<React.SetStateAction<Page>>;
+}
+
+export default function MenuContent({
+  currentPage,
+  setCurrentPage,
+}: MenuContentProps) {
   return (
     <Stack sx={{ flexGrow: 1, p: 1, justifyContent: "space-between" }}>
       <List dense>
         {mainListItems.map((item, index) => (
           <ListItem key={index} disablePadding sx={{ display: "block" }}>
-            <ListItemButton selected={index === 0}>
+            <ListItemButton
+              selected={currentPage === item.page}
+              onClick={() => setCurrentPage(item.page)}
+            >
               <ListItemIcon>{item.icon}</ListItemIcon>
               <ListItemText primary={item.text} />
             </ListItemButton>
           </ListItem>
         ))}
       </List>
+
       <List dense>
         {secondaryListItems.map((item, index) => (
           <ListItem key={index} disablePadding sx={{ display: "block" }}>
-            <ListItemButton>
+            <ListItemButton
+              selected={currentPage === item.page}
+              onClick={() => setCurrentPage(item.page)}
+            >
               <ListItemIcon>{item.icon}</ListItemIcon>
               <ListItemText primary={item.text} />
             </ListItemButton>

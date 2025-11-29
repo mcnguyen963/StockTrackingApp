@@ -11,8 +11,11 @@ import { Button, Select } from "@mui/material";
 import SelectContent from "./SelectContent";
 import MenuContent from "./MenuContent";
 import type { UserData } from "../type";
+import type { Page } from "../type";
 interface SideMenuProps {
   userData: UserData;
+  setCurrentPage: React.Dispatch<React.SetStateAction<Page>>;
+  currentPage: Page;
 }
 
 const drawerWidth = 240;
@@ -30,7 +33,11 @@ const Drawer = styled(MuiDrawer)({
   },
 });
 
-export default function SideMenu({ userData }: SideMenuProps) {
+export default function SideMenu({
+  userData,
+  setCurrentPage,
+  currentPage,
+}: SideMenuProps) {
   return (
     <Drawer
       variant="permanent"
@@ -56,7 +63,10 @@ export default function SideMenu({ userData }: SideMenuProps) {
           flexDirection: "column",
         }}
       >
-        <MenuContent />
+        <MenuContent
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+        />
         {/* <>CardAlert</> */}
       </Box>
       <Stack
