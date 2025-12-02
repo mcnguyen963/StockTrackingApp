@@ -1,14 +1,6 @@
 // src/pages/CompoundCalculator.tsx
-import React, { useState, useMemo } from "react";
-import {
-  Box,
-  Container,
-  TextField,
-  Typography,
-  Button,
-  Stack,
-  MenuItem,
-} from "@mui/material";
+import React, { useMemo } from "react";
+import { Box, Container, TextField, Stack, MenuItem } from "@mui/material";
 import {
   LineChart,
   Line,
@@ -28,12 +20,12 @@ interface DataPoint {
 }
 
 export default function CompoundCalculator() {
-  const [principal, setPrincipal] = useState(1000);
-  const [rate, setRate] = useState(5);
-  const [years, setYears] = useState(10);
-  const [regularDeposit, setRegularDeposit] = useState(0);
+  const [principal, setPrincipal] = React.useState(1000);
+  const [rate, setRate] = React.useState(5);
+  const [years, setYears] = React.useState(10);
+  const [regularDeposit, setRegularDeposit] = React.useState(0);
   const [depositFrequency, setDepositFrequency] =
-    useState<DepositFrequency>("Monthly");
+    React.useState<DepositFrequency>("Monthly");
 
   const data: DataPoint[] = useMemo(() => {
     const points: DataPoint[] = [];
@@ -65,8 +57,8 @@ export default function CompoundCalculator() {
         mt: 4,
         display: "flex",
         flexDirection: "column",
-        alignItems: "center", // center horizontally
-        justifyContent: "center", // center vertically (if container has height)
+        alignItems: "center",
+        justifyContent: "center",
         paddingTop: "20px",
       }}
     >
@@ -81,14 +73,14 @@ export default function CompoundCalculator() {
           label="Principal ($)"
           type="number"
           value={principal}
-          onChange={(e) => setPrincipal(Number(e.target.value))}
+          onChange={(e) => setPrincipal(Number(e.target.value) || 0)}
           fullWidth
         />
         <TextField
           label="Annual Interest Rate (%)"
           type="number"
           value={rate}
-          onChange={(e) => setRate(Number(e.target.value))}
+          onChange={(e) => setRate(Number(e.target.value) || 0)}
           fullWidth
         />
         <TextField
@@ -105,6 +97,7 @@ export default function CompoundCalculator() {
           onChange={(e) => setRegularDeposit(Number(e.target.value))}
           fullWidth
         />
+
         <TextField
           select
           label="Deposit Frequency"

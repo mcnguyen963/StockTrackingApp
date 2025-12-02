@@ -6,8 +6,7 @@ import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
-import { Draw, Logout } from "@mui/icons-material";
-import { Button, Select } from "@mui/material";
+
 import SelectContent from "./SelectContent";
 import MenuContent from "./MenuContent";
 import type { UserData } from "../type";

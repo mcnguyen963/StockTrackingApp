@@ -1,8 +1,7 @@
 // Authentication.tsx
 import React, { useState } from "react";
-import { Box, Button, TextField, Tabs, Tab } from "@mui/material";
+import { Box, Tabs, Tab } from "@mui/material";
 import type { UserData } from "./type";
-import { Login } from "@mui/icons-material";
 import LoginWindow from "./components/LoginWindow";
 import SignUpWindow from "./components/SignUpWindow";
 type Props = {

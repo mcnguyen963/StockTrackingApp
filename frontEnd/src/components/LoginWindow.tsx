@@ -1,5 +1,5 @@
 // src/components/LoginWindow.tsx
-import React, { useState } from "react";
+import React from "react";
 import { Box, Button, TextField } from "@mui/material";
 import type { UserData } from "../type";
 import { signInWithEmailAndPassword } from "firebase/auth";
@@ -11,9 +11,9 @@ type Props = {
 export default function LoginWindow({ onLogin }: Props) {
   const CURRENT_USER_DATA_KEY = "currentUserDataKEY";
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [error, setError] = React.useState("");
 
   const handleLogin = async () => {
     try {

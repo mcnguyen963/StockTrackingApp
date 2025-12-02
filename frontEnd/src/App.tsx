@@ -1,26 +1,14 @@
 import "./App.css";
-import {
-  autocompleteClasses,
-  Box,
-  Container,
-  Grid,
-  Stack,
-} from "@mui/material";
+import { Box, Container } from "@mui/material";
 
 import SideMenu from "./components/SideMenu";
-import CssBaseline from "@mui/material/CssBaseline";
-import { alpha, withTheme } from "@mui/material/styles";
-import AppNavbar from "./components/AppNavBar";
 import React from "react";
-import { CrueltyFree, DisplaySettings, Favorite } from "@mui/icons-material";
 import type { UserData } from "./type";
 import Authentication from "./Authentication";
 import CompoundCalculator from "./pages/CompoundCalculator";
 import HomePage from "./pages/HomePage";
+import SPSimulator from "./pages/SPSimulator";
 import type { Page } from "./type";
-import { auth } from "./FireBase";
-
-const drawerWidth = 240;
 
 function App() {
   const CURRENT_USER_DATA_KEY = "currentUserDataKEY";
@@ -34,7 +22,7 @@ function App() {
   const pages: Record<Page, React.ReactNode> = {
     Home: <HomePage />,
     "Compound Interest Calculator": <CompoundCalculator />,
-    "S&P 500 Simulator": <div>S&P 500 Simulator Page</div>,
+    "S&P 500 Simulator": <SPSimulator />,
     Settings: <div>Settings Page</div>,
     About: <div>About Page</div>,
   };
@@ -62,7 +50,7 @@ function App() {
             padding: 0,
             margin: 0,
             width: "100vw",
-            height: "100vh",
+            minHeight: "100vh",
             bgcolor: "white",
           }}
           maxWidth={false}
@@ -89,7 +77,7 @@ function App() {
 
             <Box
               sx={{
-                height: "80vh",
+                minHeight: "80vh",
                 color: "black",
                 alignItems: "left",
                 border: "1px solid #ccc",

@@ -1,5 +1,5 @@
 // src/components/SignUpWindow.tsx
-import React, { useState } from "react";
+import React from "react";
 import { Box, Button, TextField } from "@mui/material";
 import type { UserData } from "../type";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
@@ -10,11 +10,11 @@ type Props = {
 };
 
 export default function SignUpWindow({ onLogin }: Props) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [displayName, setDisplayName] = useState("");
-  const [error, setError] = useState("");
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [confirmPassword, setConfirmPassword] = React.useState("");
+  const [displayName, setDisplayName] = React.useState("");
+  const [error, setError] = React.useState("");
 
   const handleSignUp = async () => {
     if (password !== confirmPassword) {
