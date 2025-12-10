@@ -1,12 +1,5 @@
 import React, { useState, useMemo } from "react";
-import {
-  Box,
-  Container,
-  TextField,
-  Typography,
-  MenuItem,
-  Stack,
-} from "@mui/material";
+import { Box, Container, TextField, MenuItem, Stack } from "@mui/material";
 import {
   LineChart,
   Line,
@@ -43,7 +36,7 @@ type ResampledDataPoint = {
   price: number;
 };
 
-export default function SPSimulator() {
+export default function InvestmentSimulator() {
   const [parsedData, setParsedData] = useState<StockDataWithDate[]>([]);
   const [startDate, setStartDate] = useState("2005-01-01");
   const [endDate, setEndDate] = useState("2025-01-01");
@@ -52,6 +45,7 @@ export default function SPSimulator() {
   const [period, setPeriod] = useState<Period>("monthly");
   const [simType, setSimType] = useState<SimulatorType>("buy uniform");
 
+  // Parse CSV with DD/MM/YYYY format
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.[0]) return;
     const file = e.target.files[0];
@@ -62,16 +56,26 @@ export default function SPSimulator() {
       skipEmptyLines: true,
       complete: (results) => {
         const data: StockDataWithDate[] = (results.data as StockData[]).map(
-          (row: any) => ({
-            ...row,
-            Open: parseFloat(row.Open),
-            High: parseFloat(row.High),
-            Low: parseFloat(row.Low),
-            Close: parseFloat(row.Close),
-            Volume: parseFloat(row.Volume),
-            DateObj: new Date(row.Date),
-          })
+          (row: any) => {
+            const [day, month, year] = row.Date.split("/").map(Number);
+            const dateObj = new Date(year, month - 1, day); // JS months 0-indexed
+
+            if (isNaN(dateObj.getTime())) {
+              console.warn("Invalid date in CSV:", row.Date);
+            }
+
+            return {
+              ...row,
+              Open: parseFloat(row.Open),
+              High: parseFloat(row.High),
+              Low: parseFloat(row.Low),
+              Close: parseFloat(row.Close),
+              Volume: parseFloat(row.Volume),
+              DateObj: dateObj,
+            };
+          }
         );
+
         setParsedData(data);
       },
     });
@@ -102,7 +106,6 @@ export default function SPSimulator() {
       }
     };
 
-    // Resample by period
     const resampled: ResampledDataPoint[] = [];
 
     const groupData = (keyFn: (d: StockDataWithDate) => string) => {
@@ -119,7 +122,10 @@ export default function SPSimulator() {
 
     if (period === "daily") {
       filteredData.forEach((d) =>
-        resampled.push({ time: d.Date, price: getPrice(d) })
+        resampled.push({
+          time: d.DateObj.toISOString().slice(0, 10),
+          price: getPrice(d),
+        })
       );
     } else if (period === "monthly") {
       grouped = groupData(
@@ -137,7 +143,10 @@ export default function SPSimulator() {
           price = Math.max(...values.map(getPrice));
         else price = values[values.length - 1].Close;
 
-        resampled.push({ time: values[0].Date, price });
+        resampled.push({
+          time: values[0].DateObj.toISOString().slice(0, 10),
+          price,
+        });
       });
 
       resampled.sort(
@@ -181,16 +190,8 @@ export default function SPSimulator() {
 
   return (
     <Container sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        S&P 500 Investment Simulator
-      </Typography>
-
       <Stack direction="column" spacing={2} sx={{ mb: 4 }}>
-        <TextField
-          type="file"
-          inputProps={{ accept: ".csv" }}
-          onChange={handleFileChange}
-        />
+        <TextField type="file" onChange={handleFileChange} />
         <TextField
           label="Start Date"
           type="date"
@@ -204,18 +205,10 @@ export default function SPSimulator() {
           onChange={(e) => setEndDate(e.target.value)}
         />
         <TextField
-          label="Starting Money"
-          value={startingMoney}
-          onChange={(e) => setStartingMoney(Number(e.target.value) || 0)}
-          inputProps={{ type: "number", min: 0 }}
-        />
-        <TextField
           label="Regular Deposit"
           value={regularDeposit}
           onChange={(e) => setRegularDeposit(Number(e.target.value) || 0)}
-          inputProps={{ type: "number", min: 0 }}
         />
-
         <TextField
           select
           label="Period"

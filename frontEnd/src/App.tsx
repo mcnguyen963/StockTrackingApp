@@ -7,8 +7,29 @@ import type { UserData } from "./type";
 import Authentication from "./Authentication";
 import CompoundCalculator from "./pages/CompoundCalculator";
 import HomePage from "./pages/HomePage";
-import SPSimulator from "./pages/SPSimulator";
-import type { Page } from "./type";
+import InvestmentSimulator from "./pages/InvestmentSimulator";
+import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
+import AnalyticsRoundedIcon from "@mui/icons-material/AnalyticsRounded";
+import { Calculate } from "@mui/icons-material";
+import type { PageItem } from "./type";
+
+export const mainPages: Record<string, PageItem> = {
+  Home: {
+    name: "Home",
+    element: <HomePage />,
+    icon: <HomeRoundedIcon />,
+  },
+  Calculator: {
+    name: "Compound Interest Calculator",
+    element: <CompoundCalculator />,
+    icon: <Calculate />,
+  },
+  Simulator: {
+    name: " Stock Investment Simulator",
+    element: <InvestmentSimulator />,
+    icon: <AnalyticsRoundedIcon />,
+  },
+};
 
 function App() {
   const CURRENT_USER_DATA_KEY = "currentUserDataKEY";
@@ -17,15 +38,7 @@ function App() {
     null
   );
   const [loading, setLoading] = React.useState(true);
-  const [currentSite, setCurrentSite] = React.useState<Page>("Home");
-
-  const pages: Record<Page, React.ReactNode> = {
-    Home: <HomePage />,
-    "Compound Interest Calculator": <CompoundCalculator />,
-    "S&P 500 Simulator": <SPSimulator />,
-    Settings: <div>Settings Page</div>,
-    About: <div>About Page</div>,
-  };
+  const [currentPage, setCurrentPage] = React.useState<string>("Home");
   React.useEffect(() => {
     const stored = localStorage.getItem(CURRENT_USER_DATA_KEY);
     if (stored) {
@@ -38,7 +51,6 @@ function App() {
   if (loading) {
     return null;
   }
-
   return (
     <>
       {!currentUserData ? (
@@ -57,8 +69,9 @@ function App() {
         >
           <SideMenu
             userData={currentUserData}
-            setCurrentPage={setCurrentSite}
-            currentPage={currentSite}
+            setCurrentPage={setCurrentPage}
+            currentPage={currentPage}
+            mainPages={mainPages}
           />
           <Box />
           <Box>
@@ -71,7 +84,11 @@ function App() {
               }}
             >
               <h5 style={{ textAlign: "left", fontSize: "20px" }}>
-                {currentSite}
+                {
+                  Object.values(mainPages).find(
+                    (page) => page.name === currentPage
+                  )?.name
+                }
               </h5>
             </Box>
 
@@ -84,7 +101,11 @@ function App() {
                 marginRight: { xs: "0px", md: "30px" },
               }}
             >
-              {pages[currentSite]}
+              {
+                Object.values(mainPages).find(
+                  (page) => page.name === currentPage
+                )?.element
+              }
             </Box>
           </Box>
         </Container>

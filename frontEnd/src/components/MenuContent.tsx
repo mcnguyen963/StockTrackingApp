@@ -9,21 +9,7 @@ import AnalyticsRoundedIcon from "@mui/icons-material/AnalyticsRounded";
 import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 import InfoRoundedIcon from "@mui/icons-material/InfoRounded";
 import { Calculate } from "@mui/icons-material";
-import type { Page } from "../type";
-
-const mainListItems: { text: string; icon: React.ReactNode; page: Page }[] = [
-  { text: "Home", icon: <HomeRoundedIcon />, page: "Home" },
-  {
-    text: "Compound Interest Calculator",
-    icon: <Calculate />,
-    page: "Compound Interest Calculator",
-  },
-  {
-    text: "S&P 500 Simulator",
-    icon: <AnalyticsRoundedIcon />,
-    page: "S&P 500 Simulator",
-  },
-];
+import type { Page, PageItem } from "../type";
 
 const secondaryListItems: {
   text: string;
@@ -34,26 +20,27 @@ const secondaryListItems: {
   { text: "About", icon: <InfoRoundedIcon />, page: "About" },
 ];
 interface MenuContentProps {
-  currentPage: Page;
-
-  setCurrentPage: React.Dispatch<React.SetStateAction<Page>>;
+  currentPage: string;
+  setCurrentPage: React.Dispatch<React.SetStateAction<string>>;
+  mainPages: Record<string, PageItem>;
 }
 
 export default function MenuContent({
   currentPage,
   setCurrentPage,
+  mainPages,
 }: MenuContentProps) {
   return (
     <Stack sx={{ flexGrow: 1, p: 1, justifyContent: "space-between" }}>
       <List dense>
-        {mainListItems.map((item, index) => (
+        {Object.entries(mainPages).map(([key, item], index) => (
           <ListItem key={index} disablePadding sx={{ display: "block" }}>
             <ListItemButton
-              selected={currentPage === item.page}
-              onClick={() => setCurrentPage(item.page)}
+              selected={currentPage === item.name}
+              onClick={() => setCurrentPage(item.name)}
             >
               <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
+              <ListItemText primary={item.name} />
             </ListItemButton>
           </ListItem>
         ))}

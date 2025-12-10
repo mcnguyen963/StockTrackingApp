@@ -10,3 +10,8 @@ export type Page =
   | "S&P 500 Simulator"
   | "Settings"
   | "About";
+export type PageItem = {
+  name: string;
+  element: React.ReactNode;
+  icon?: React.ReactNode;
+};

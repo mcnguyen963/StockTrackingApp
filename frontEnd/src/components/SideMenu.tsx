@@ -11,10 +11,12 @@ import SelectContent from "./SelectContent";
 import MenuContent from "./MenuContent";
 import type { UserData } from "../type";
 import type { Page } from "../type";
+import type { PageItem } from "../type";
 interface SideMenuProps {
   userData: UserData;
-  setCurrentPage: React.Dispatch<React.SetStateAction<Page>>;
-  currentPage: Page;
+  setCurrentPage: React.Dispatch<React.SetStateAction<string>>;
+  currentPage: string;
+  mainPages: Record<string, PageItem>;
 }
 
 const drawerWidth = 240;
@@ -36,6 +38,7 @@ export default function SideMenu({
   userData,
   setCurrentPage,
   currentPage,
+  mainPages,
 }: SideMenuProps) {
   return (
     <Drawer
@@ -65,6 +68,7 @@ export default function SideMenu({
         <MenuContent
           currentPage={currentPage}
           setCurrentPage={setCurrentPage}
+          mainPages={mainPages}
         />
         {/* <>CardAlert</> */}
       </Box>
