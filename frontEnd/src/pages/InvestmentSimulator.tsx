@@ -1,5 +1,12 @@
 import React, { useState, useMemo } from "react";
-import { Box, Container, TextField, MenuItem, Stack } from "@mui/material";
+import {
+  Box,
+  Container,
+  TextField,
+  MenuItem,
+  Stack,
+  Button,
+} from "@mui/material";
 import {
   LineChart,
   Line,
@@ -20,8 +27,7 @@ type StockData = {
   Volume: number;
 };
 
-type StockDataWithDate = StockData & { DateObj: Date };
-
+type StockDataWithDate = StockData & { DateObj: Date; timestamp: number };
 type Period = "daily" | "monthly" | "yearly";
 type SimulatorType = "buy uniform" | "buy lowest" | "buy highest";
 
@@ -32,12 +38,18 @@ interface DataPoint {
 }
 
 type ResampledDataPoint = {
-  time: string;
+  time: number;
   price: number;
 };
 
+const MAX_YEAR_GAP = 30;
+
 export default function InvestmentSimulator() {
   const [parsedData, setParsedData] = useState<StockDataWithDate[]>([]);
+  const [minDate, setMinDate] = useState<number | null>(null);
+  const [maxDate, setMaxDate] = useState<number | null>(null);
+
+  // Editable states
   const [startDate, setStartDate] = useState("2005-01-01");
   const [endDate, setEndDate] = useState("2025-01-01");
   const [startingMoney, setStartingMoney] = useState(1000);
@@ -45,7 +57,16 @@ export default function InvestmentSimulator() {
   const [period, setPeriod] = useState<Period>("monthly");
   const [simType, setSimType] = useState<SimulatorType>("buy uniform");
 
-  // Parse CSV with DD/MM/YYYY format
+  // Applied states (used by graph)
+  const [appliedStartDate, setAppliedStartDate] = useState(startDate);
+  const [appliedEndDate, setAppliedEndDate] = useState(endDate);
+  const [appliedStartingMoney, setAppliedStartingMoney] =
+    useState(startingMoney);
+  const [appliedRegularDeposit, setAppliedRegularDeposit] =
+    useState(regularDeposit);
+  const [appliedPeriod, setAppliedPeriod] = useState(period);
+  const [appliedSimType, setAppliedSimType] = useState(simType);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.[0]) return;
     const file = e.target.files[0];
@@ -58,25 +79,24 @@ export default function InvestmentSimulator() {
         const data: StockDataWithDate[] = (results.data as StockData[]).map(
           (row: any) => {
             const [day, month, year] = row.Date.split("/").map(Number);
-            const dateObj = new Date(year, month - 1, day); // JS months 0-indexed
-
-            if (isNaN(dateObj.getTime())) {
-              console.warn("Invalid date in CSV:", row.Date);
-            }
-
+            const dateObj = new Date(year, month - 1, day);
             return {
               ...row,
-              Open: parseFloat(row.Open),
-              High: parseFloat(row.High),
-              Low: parseFloat(row.Low),
-              Close: parseFloat(row.Close),
-              Volume: parseFloat(row.Volume),
+              Open: +row.Open,
+              High: +row.High,
+              Low: +row.Low,
+              Close: +row.Close,
+              Volume: +row.Volume,
               DateObj: dateObj,
+              timestamp: dateObj.getTime(),
             };
           }
         );
-
+        if (!data.length) return;
+        data.sort((a, b) => a.timestamp - b.timestamp);
         setParsedData(data);
+        setMinDate(data[0].timestamp);
+        setMaxDate(data[data.length - 1].timestamp);
       },
     });
   };
@@ -84,19 +104,16 @@ export default function InvestmentSimulator() {
   const chartData: DataPoint[] = useMemo(() => {
     if (!parsedData.length) return [];
 
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    const startTs = new Date(appliedStartDate).getTime();
+    const endTs = new Date(appliedEndDate).getTime();
 
-    const filteredData = parsedData
-      .filter((d) => d.DateObj >= start && d.DateObj <= end)
-      .sort((a, b) => a.DateObj.getTime() - b.DateObj.getTime());
-
-    if (!filteredData.length) return [];
+    const filtered = parsedData.filter(
+      (d) => d.timestamp >= startTs && d.timestamp <= endTs
+    );
+    if (!filtered.length) return [];
 
     const getPrice = (d: StockDataWithDate) => {
-      switch (simType) {
-        case "buy uniform":
-          return d.Close;
+      switch (appliedSimType) {
         case "buy lowest":
           return d.Low;
         case "buy highest":
@@ -108,59 +125,40 @@ export default function InvestmentSimulator() {
 
     const resampled: ResampledDataPoint[] = [];
 
-    const groupData = (keyFn: (d: StockDataWithDate) => string) => {
-      const map = new Map<string, StockDataWithDate[]>();
-      filteredData.forEach((d) => {
-        const key = keyFn(d);
+    if (appliedPeriod === "daily") {
+      for (const d of filtered) {
+        resampled.push({ time: d.timestamp, price: getPrice(d) });
+      }
+    } else {
+      const map = new Map<number, StockDataWithDate[]>();
+      for (const d of filtered) {
+        const key =
+          appliedPeriod === "monthly"
+            ? d.DateObj.getFullYear() * 100 + d.DateObj.getMonth()
+            : d.DateObj.getFullYear();
         if (!map.has(key)) map.set(key, []);
         map.get(key)!.push(d);
-      });
-      return map;
-    };
+      }
 
-    let grouped: Map<string, StockDataWithDate[]> = new Map();
-
-    if (period === "daily") {
-      filteredData.forEach((d) =>
-        resampled.push({
-          time: d.DateObj.toISOString().slice(0, 10),
-          price: getPrice(d),
-        })
-      );
-    } else if (period === "monthly") {
-      grouped = groupData(
-        (d) => `${d.DateObj.getFullYear()}-${d.DateObj.getMonth()}`
-      );
-    } else if (period === "yearly") {
-      grouped = groupData((d) => `${d.DateObj.getFullYear()}`);
-    }
-
-    if (period !== "daily") {
-      grouped.forEach((values) => {
+      for (const values of map.values()) {
         let price: number;
-        if (simType === "buy lowest") price = Math.min(...values.map(getPrice));
-        else if (simType === "buy highest")
+        if (appliedSimType === "buy lowest")
+          price = Math.min(...values.map(getPrice));
+        else if (appliedSimType === "buy highest")
           price = Math.max(...values.map(getPrice));
         else price = values[values.length - 1].Close;
 
-        resampled.push({
-          time: values[0].DateObj.toISOString().slice(0, 10),
-          price,
-        });
-      });
-
-      resampled.sort(
-        (a, b) => new Date(a.time).getTime() - new Date(b.time).getTime()
-      );
+        resampled.push({ time: values[0].timestamp, price });
+      }
+      resampled.sort((a, b) => a.time - b.time);
     }
 
     // Simulation
-    let shares = startingMoney / resampled[0].price;
-    let totalDeposit = startingMoney;
-
+    let shares = appliedStartingMoney / resampled[0].price;
+    let totalDeposit = appliedStartingMoney;
     const points: DataPoint[] = [
       {
-        time: resampled[0].time,
+        time: new Date(resampled[0].time).toISOString().slice(0, 10),
         portfolioValue: shares * resampled[0].price,
         totalDeposit,
       },
@@ -168,10 +166,10 @@ export default function InvestmentSimulator() {
 
     for (let i = 1; i < resampled.length; i++) {
       const price = resampled[i].price;
-      shares += regularDeposit / price;
-      totalDeposit += regularDeposit;
+      shares += appliedRegularDeposit / price;
+      totalDeposit += appliedRegularDeposit;
       points.push({
-        time: resampled[i].time,
+        time: new Date(resampled[i].time).toISOString().slice(0, 10),
         portfolioValue: shares * price,
         totalDeposit,
       });
@@ -180,45 +178,122 @@ export default function InvestmentSimulator() {
     return points;
   }, [
     parsedData,
-    startDate,
-    endDate,
-    startingMoney,
-    regularDeposit,
-    period,
-    simType,
+    appliedStartDate,
+    appliedEndDate,
+    appliedStartingMoney,
+    appliedRegularDeposit,
+    appliedPeriod,
+    appliedSimType,
   ]);
+
+  const handleApply = () => {
+    setAppliedStartDate(startDate);
+    setAppliedEndDate(endDate);
+    setAppliedStartingMoney(startingMoney);
+    setAppliedRegularDeposit(regularDeposit);
+    setAppliedPeriod(period);
+    setAppliedSimType(simType);
+  };
 
   return (
     <Container sx={{ mt: 4 }}>
-      <Stack direction="column" spacing={2} sx={{ mb: 4 }}>
+      <Stack direction="column" spacing={2} sx={{ mb: 2 }}>
         <TextField type="file" onChange={handleFileChange} />
+
         <TextField
           label="Start Date"
           type="date"
           value={startDate}
           onChange={(e) => setStartDate(e.target.value)}
+          error={Boolean(
+            (startDate && endDate && startDate > endDate) ||
+              (minDate &&
+                maxDate &&
+                (new Date(startDate).getTime() < minDate ||
+                  new Date(startDate).getTime() > maxDate)) ||
+              (startDate &&
+                endDate &&
+                new Date(endDate).getFullYear() -
+                  new Date(startDate).getFullYear() >
+                  MAX_YEAR_GAP)
+          )}
+          helperText={
+            startDate && endDate && startDate > endDate
+              ? "Start date cannot be after end date"
+              : minDate &&
+                maxDate &&
+                (new Date(startDate).getTime() < minDate ||
+                  new Date(startDate).getTime() > maxDate)
+              ? `Start date must be between ${new Date(minDate)
+                  .toISOString()
+                  .slice(0, 10)} and ${new Date(maxDate)
+                  .toISOString()
+                  .slice(0, 10)}`
+              : startDate &&
+                endDate &&
+                new Date(endDate).getFullYear() -
+                  new Date(startDate).getFullYear() >
+                  MAX_YEAR_GAP
+              ? `Date range cannot exceed ${MAX_YEAR_GAP} years`
+              : ""
+          }
         />
+
         <TextField
           label="End Date"
           type="date"
           value={endDate}
           onChange={(e) => setEndDate(e.target.value)}
+          error={Boolean(
+            (startDate && endDate && endDate < startDate) ||
+              (minDate &&
+                maxDate &&
+                (new Date(endDate).getTime() < minDate ||
+                  new Date(endDate).getTime() > maxDate)) ||
+              (startDate &&
+                endDate &&
+                new Date(endDate).getFullYear() -
+                  new Date(startDate).getFullYear() >
+                  MAX_YEAR_GAP)
+          )}
+          helperText={
+            startDate && endDate && endDate < startDate
+              ? "End date cannot be before start date"
+              : minDate &&
+                maxDate &&
+                (new Date(endDate).getTime() < minDate ||
+                  new Date(endDate).getTime() > maxDate)
+              ? `End date must be between ${new Date(minDate)
+                  .toISOString()
+                  .slice(0, 10)} and ${new Date(maxDate)
+                  .toISOString()
+                  .slice(0, 10)}`
+              : startDate &&
+                endDate &&
+                new Date(endDate).getFullYear() -
+                  new Date(startDate).getFullYear() >
+                  MAX_YEAR_GAP
+              ? `Date range cannot exceed ${MAX_YEAR_GAP} years`
+              : ""
+          }
         />
+
         <TextField
           label="Regular Deposit"
           value={regularDeposit}
           onChange={(e) => setRegularDeposit(Number(e.target.value) || 0)}
         />
+
         <TextField
           select
           label="Period"
           value={period}
           onChange={(e) => setPeriod(e.target.value as Period)}
         >
-          <MenuItem value="daily">Daily</MenuItem>
           <MenuItem value="monthly">Monthly</MenuItem>
           <MenuItem value="yearly">Yearly</MenuItem>
         </TextField>
+
         <TextField
           select
           label="Simulator Type"
@@ -229,6 +304,10 @@ export default function InvestmentSimulator() {
           <MenuItem value="buy lowest">Buy Lowest (Low)</MenuItem>
           <MenuItem value="buy highest">Buy Highest (High)</MenuItem>
         </TextField>
+
+        <Button variant="contained" onClick={handleApply}>
+          Apply Changes
+        </Button>
       </Stack>
 
       <Box sx={{ width: "100%", height: 400 }}>
