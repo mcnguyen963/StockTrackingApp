@@ -19,15 +19,11 @@ import {
 import * as Papa from "papaparse";
 
 type StockData = {
-  Date: string;
-  Open: number;
-  High: number;
-  Low: number;
-  Close: number;
-  Volume: number;
+  Date: String;
+  Price: number;
+  DateObject: Date;
 };
 
-type StockDataWithDate = StockData & { DateObj: Date; timestamp: number };
 type Period = "daily" | "monthly" | "yearly";
 type SimulatorType = "buy uniform" | "buy lowest" | "buy highest";
 
@@ -42,10 +38,10 @@ type ResampledDataPoint = {
   price: number;
 };
 
-const MAX_YEAR_GAP = 30;
+const MAX_YEAR_GAP = 50;
 
 export default function InvestmentSimulator() {
-  const [parsedData, setParsedData] = useState<StockDataWithDate[]>([]);
+  const [parsedData, setParsedData] = useState<StockData[]>([]);
   const [minDate, setMinDate] = useState<number | null>(null);
   const [maxDate, setMaxDate] = useState<number | null>(null);
 
@@ -76,27 +72,21 @@ export default function InvestmentSimulator() {
       dynamicTyping: true,
       skipEmptyLines: true,
       complete: (results) => {
-        const data: StockDataWithDate[] = (results.data as StockData[]).map(
-          (row: any) => {
-            const [day, month, year] = row.Date.split("/").map(Number);
-            const dateObj = new Date(year, month - 1, day);
-            return {
-              ...row,
-              Open: +row.Open,
-              High: +row.High,
-              Low: +row.Low,
-              Close: +row.Close,
-              Volume: +row.Volume,
-              DateObj: dateObj,
-              timestamp: dateObj.getTime(),
-            };
-          }
-        );
+        const data: StockData[] = results.data.map((row: any) => {
+          const [day, month, year] = row.Date.split("/").map(Number);
+          const dateObj = new Date(year, month - 1, day);
+          return {
+            Date: row.Date,
+            Price: row.Price,
+            DateObject: dateObj,
+          };
+        });
+
         if (!data.length) return;
-        data.sort((a, b) => a.timestamp - b.timestamp);
+        data.sort((a, b) => a.DateObject.getTime() - b.DateObject.getTime());
         setParsedData(data);
-        setMinDate(data[0].timestamp);
-        setMaxDate(data[data.length - 1].timestamp);
+        setMinDate(data[0].DateObject.getTime());
+        setMaxDate(data[data.length - 1].DateObject.getTime());
       },
     });
   };
@@ -108,52 +98,46 @@ export default function InvestmentSimulator() {
     const endTs = new Date(appliedEndDate).getTime();
 
     const filtered = parsedData.filter(
-      (d) => d.timestamp >= startTs && d.timestamp <= endTs
+      (d) =>
+        d.DateObject.getTime() >= startTs && d.DateObject.getTime() <= endTs
     );
     if (!filtered.length) return [];
 
-    const getPrice = (d: StockDataWithDate) => {
-      switch (appliedSimType) {
-        case "buy lowest":
-          return d.Low;
-        case "buy highest":
-          return d.High;
-        default:
-          return d.Close;
-      }
-    };
-
     const resampled: ResampledDataPoint[] = [];
 
-    if (appliedPeriod === "daily") {
-      for (const d of filtered) {
-        resampled.push({ time: d.timestamp, price: getPrice(d) });
-      }
-    } else {
-      const map = new Map<number, StockDataWithDate[]>();
-      for (const d of filtered) {
-        const key =
-          appliedPeriod === "monthly"
-            ? d.DateObj.getFullYear() * 100 + d.DateObj.getMonth()
-            : d.DateObj.getFullYear();
-        if (!map.has(key)) map.set(key, []);
-        map.get(key)!.push(d);
-      }
+    const bucketMap = new Map<number, ResampledDataPoint>();
 
-      for (const values of map.values()) {
-        let price: number;
-        if (appliedSimType === "buy lowest")
-          price = Math.min(...values.map(getPrice));
-        else if (appliedSimType === "buy highest")
-          price = Math.max(...values.map(getPrice));
-        else price = values[values.length - 1].Close;
+    for (const d of filtered) {
+      const key =
+        appliedPeriod === "monthly"
+          ? d.DateObject.getFullYear() * 100 + d.DateObject.getMonth()
+          : d.DateObject.getFullYear();
 
-        resampled.push({ time: values[0].timestamp, price });
+      const price = d.Price;
+
+      const existing = bucketMap.get(key);
+
+      if (!existing) {
+        bucketMap.set(key, { time: d.DateObject.getTime(), price });
+      } else {
+        switch (appliedSimType) {
+          case "buy lowest":
+            if (price < existing.price)
+              bucketMap.set(key, { time: d.DateObject.getTime(), price });
+            break;
+          case "buy highest":
+            if (price > existing.price)
+              bucketMap.set(key, { time: d.DateObject.getTime(), price });
+            break;
+          default:
+            break;
+        }
       }
-      resampled.sort((a, b) => a.time - b.time);
     }
 
-    // Simulation
+    resampled.push(
+      ...Array.from(bucketMap.values()).sort((a, b) => a.time - b.time)
+    );
     let shares = appliedStartingMoney / resampled[0].price;
     let totalDeposit = appliedStartingMoney;
     const points: DataPoint[] = [
@@ -277,7 +261,11 @@ export default function InvestmentSimulator() {
               : ""
           }
         />
-
+        <TextField
+          label="Inital Deposit"
+          value={startingMoney}
+          onChange={(e) => setStartingMoney(Number(e.target.value) || 0)}
+        />
         <TextField
           label="Regular Deposit"
           value={regularDeposit}
@@ -311,7 +299,12 @@ export default function InvestmentSimulator() {
       </Stack>
 
       <Box sx={{ width: "100%", height: 400 }}>
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer
+          width="100%"
+          minWidth="300px"
+          minHeight="70px"
+          height="100%"
+        >
           <LineChart
             data={chartData}
             margin={{ top: 20, right: 30, left: 80, bottom: 20 }}
@@ -350,6 +343,7 @@ export default function InvestmentSimulator() {
               stroke="#1976d2"
               strokeWidth={2}
               name="Portfolio Value"
+              isAnimationActive={false}
             />
             <Line
               type="monotone"
@@ -357,6 +351,7 @@ export default function InvestmentSimulator() {
               stroke="#ff9800"
               strokeWidth={2}
               name="Total Deposited"
+              isAnimationActive={false}
             />
           </LineChart>
         </ResponsiveContainer>
