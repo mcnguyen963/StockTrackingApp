@@ -312,6 +312,10 @@ export default function InvestmentSimulator() {
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis
               dataKey="time"
+              tickFormatter={(value: string) => {
+                const [year, month, day] = value.split("-");
+                return `${month}/${year}`;
+              }}
               label={{
                 value: "Date",
                 position: "insideBottomRight",

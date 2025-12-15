@@ -4,12 +4,14 @@ import { Box, Button, TextField } from "@mui/material";
 import type { UserData } from "../type";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../FireBase";
+import { sendPasswordResetEmail } from "firebase/auth";
 type Props = {
   onLogin: (user: UserData) => void;
 };
 
 export default function LoginWindow({ onLogin }: Props) {
   const CURRENT_USER_DATA_KEY = "currentUserDataKEY";
+  const [LognInWindowState, setLognInWindowState] = React.useState(true);
 
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
@@ -36,7 +38,21 @@ export default function LoginWindow({ onLogin }: Props) {
       setError("Invalid email or password");
     }
   };
+  const handleResetPassword = async () => {
+    if (!email) {
+      setError("Please enter your email");
+      return;
+    }
 
+    try {
+      await sendPasswordResetEmail(auth, email);
+      alert(
+        "If the email exists in our system, a password reset link has been sent."
+      );
+    } catch (err) {
+      console.error(err); // optional: log for debugging
+    }
+  };
   return (
     <Box
       sx={{
@@ -55,15 +71,27 @@ export default function LoginWindow({ onLogin }: Props) {
         value={email}
         onChange={(e) => setEmail(e.target.value)}
       />
-      <TextField
-        label="Password"
-        type="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
+      {LognInWindowState && (
+        <TextField
+          label="Password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+      )}
       {error && <Box sx={{ color: "red" }}>{error}</Box>}
-      <Button variant="contained" onClick={handleLogin}>
-        Login
+      <Button
+        variant="contained"
+        onClick={LognInWindowState ? handleLogin : handleResetPassword}
+      >
+        {LognInWindowState ? "Login" : "Submit"}
+      </Button>
+      <Button
+        variant="text"
+        color="primary"
+        onClick={() => setLognInWindowState(!LognInWindowState)}
+      >
+        {LognInWindowState ? "Forgot Password?" : "Back to Login"}
       </Button>
     </Box>
   );

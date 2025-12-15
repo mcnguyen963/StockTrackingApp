@@ -12,6 +12,8 @@ import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
 import AnalyticsRoundedIcon from "@mui/icons-material/AnalyticsRounded";
 import { Calculate } from "@mui/icons-material";
 import type { PageItem } from "./type";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "./FireBase";
 
 export const mainPages: Record<string, PageItem> = {
   Home: {
@@ -32,21 +34,40 @@ export const mainPages: Record<string, PageItem> = {
 };
 
 function App() {
-  const CURRENT_USER_DATA_KEY = "currentUserDataKEY";
+  // const CURRENT_USER_DATA_KEY = "currentUserDataKEY";
 
   const [currentUserData, setCurrentUserData] = React.useState<UserData | null>(
     null
   );
   const [loading, setLoading] = React.useState(true);
   const [currentPage, setCurrentPage] = React.useState<string>("Home");
-  React.useEffect(() => {
-    const stored = localStorage.getItem(CURRENT_USER_DATA_KEY);
-    if (stored) {
-      const user: UserData = JSON.parse(stored);
-      setCurrentUserData(user);
-    }
+  // React.useEffect(() => {
+  //   const stored = localStorage.getItem(CURRENT_USER_DATA_KEY);
+  //   if (stored) {
+  //     const user: UserData = JSON.parse(stored);
+  //     setCurrentUserData(user);
+  //   }
 
-    setLoading(false);
+  //   setLoading(false);
+  // }, []);
+
+  React.useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setCurrentUserData({
+          key: user.uid,
+          email: user.email ?? "",
+          displayName: user.displayName ?? "User",
+          FavoriteStocks: [],
+        });
+      } else {
+        setCurrentUserData(null);
+      }
+
+      setLoading(false);
+    });
+
+    return unsubscribe;
   }, []);
   if (loading) {
     return null;

@@ -6,6 +6,7 @@ import ListSubheader from "@mui/material/ListSubheader";
 import Select, { selectClasses } from "@mui/material/Select";
 import type { SelectChangeEvent } from "@mui/material/Select";
 import { styled } from "@mui/material/styles";
+import { Box } from "@mui/material";
 
 const ListItemAvatar = styled(MuiListItemAvatar)({
   minWidth: 0,
@@ -13,17 +14,25 @@ const ListItemAvatar = styled(MuiListItemAvatar)({
 });
 
 export default function SelectContent() {
-  const [useMode, setUseMode] = React.useState("User View");
+  const [userMode, setUserMode] = React.useState(true);
+  const [selectedView, setSelectedView] = React.useState("User View");
 
   const handleChange = (event: SelectChangeEvent) => {
-    setUseMode(event.target.value as string);
+    setSelectedView(event.target.value as string);
   };
+
+  if (userMode)
+    return (
+      <Box sx={{ height: "50px", width: "200px" }}>
+        <h3>Financial Web Logo</h3>
+      </Box>
+    );
 
   return (
     <Select
       labelId="company-select"
       id="company-simple-select"
-      value={useMode}
+      value={selectedView}
       onChange={handleChange}
       displayEmpty
       inputProps={{ "aria-label": "Select company" }}
@@ -44,12 +53,12 @@ export default function SelectContent() {
     >
       <ListSubheader sx={{ pt: 0 }}>Production</ListSubheader>
       <MenuItem value={"User View"}>
-        <ListItemAvatar></ListItemAvatar>
+        <ListItemAvatar />
         <ListItemText primary="User View" secondary="Web app" />
       </MenuItem>
       <ListSubheader sx={{ pt: 0 }}>Development</ListSubheader>
       <MenuItem value={"Development View"}>
-        <ListItemAvatar></ListItemAvatar>
+        <ListItemAvatar />
         <ListItemText primary="Development View" secondary="Web app" />
       </MenuItem>
     </Select>

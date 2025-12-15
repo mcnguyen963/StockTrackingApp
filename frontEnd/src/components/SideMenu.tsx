@@ -12,6 +12,8 @@ import MenuContent from "./MenuContent";
 import type { UserData } from "../type";
 import type { Page } from "../type";
 import type { PageItem } from "../type";
+import { signOut } from "firebase/auth";
+import { auth } from "../FireBase";
 interface SideMenuProps {
   userData: UserData;
   setCurrentPage: React.Dispatch<React.SetStateAction<string>>;
@@ -113,7 +115,12 @@ export default function SideMenu({
           </Typography>
         </Box>
         <Box sx={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
-          <LogoutRoundedIcon sx={{ mr: 0.5 }} />
+          <LogoutRoundedIcon
+            sx={{ mr: 0.5 }}
+            onClick={() => {
+              signOut(auth);
+            }}
+          />
         </Box>
       </Stack>
     </Drawer>
